@@ -24,6 +24,10 @@ static uint32_t calc_threadgroup(uint32_t count)
 	return count / THREADCOUNT + ((count % THREADCOUNT) > 0 ? 1 : 0);
 }
 
+struct GPUUniforms {
+	int32_t noise_tile_size;
+};
+
 int main(int argc, char **argv)
 {
 	SDL_Init(SDL_INIT_VIDEO);
@@ -52,6 +56,10 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	struct GPUUniforms uniforms = {
+		.noise_tile_size = 4,
+	};
+
 	// 1. Create GPU resources
 	SDL_GPUDevice *device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, NULL);
 
@@ -70,6 +78,7 @@ int main(int argc, char **argv)
 		.threadcount_z = 1,
 		.num_readwrite_storage_textures = 1,
 		.num_readonly_storage_textures = 2,
+		.num_uniform_buffers = 1,
 	});
 
 	SDL_GPUTexture *in_texture = SDL_CreateGPUTexture(device, &(SDL_GPUTextureCreateInfo) {
@@ -176,6 +185,7 @@ int main(int argc, char **argv)
 		SDL_BindGPUComputePipeline(compute_pass, pipeline);
 		SDL_BindGPUComputeStorageTextures(compute_pass, 0, &in_texture, 1);
 		SDL_BindGPUComputeStorageTextures(compute_pass, 1, &noise_texture, 1);
+		SDL_PushGPUComputeUniformData(cmdbuf, 0, &uniforms, sizeof(uniforms));
 		SDL_DispatchGPUCompute(compute_pass, calc_threadgroup(w), calc_threadgroup(h), 1);
 
 		SDL_EndGPUComputePass(compute_pass);
