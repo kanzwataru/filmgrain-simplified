@@ -12,7 +12,7 @@
 #include "../extern/stb_image.h"
 #include "../extern/stb_image_write.h"
 
-#include "../shader/hello.gen.h"
+#include "../shader/render_filmgrain.gen.h"
 #include "../resources/resources.gen.h"
 
 #define THREADCOUNT 8
@@ -62,8 +62,8 @@ int main(int argc, char **argv)
 
 	SDL_GPUComputePipeline *pipeline = SDL_CreateGPUComputePipeline(device, &(SDL_GPUComputePipelineCreateInfo){
 		.format = SDL_GPU_SHADERFORMAT_SPIRV,
-		.code = &hello_shader_source[0],
-		.code_size = sizeof(hello_shader_source),
+		.code = &render_filmgrain_shader_source[0],
+		.code_size = sizeof(render_filmgrain_shader_source),
 		.entrypoint = "CSMain",
 		.threadcount_x = 8,
 		.threadcount_y = 8,

@@ -25,7 +25,6 @@ def main():
 		f.write(f'static const unsigned char {shader.split(".")[0]}_shader_source[{len(data)}]')
 		f.write('= {\n\t')
 		for i, b in enumerate(data):
-			print(hex(b))
 			f.write(f'{hex(b)}, ')
 			if i % 24 == 0:
 				f.write('\n\t')
