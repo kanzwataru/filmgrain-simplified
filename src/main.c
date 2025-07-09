@@ -25,7 +25,15 @@ static uint32_t calc_threadgroup(uint32_t count)
 }
 
 struct GPUUniforms {
+	// NOTE: Keep this in-sync with same struct in 'render_filmgrain.hlsl' (and mind the alignment!)
+	int32_t noise_offsets_r[2];
+	int32_t noise_offsets_g[2];
+
+	int32_t noise_offsets_b[2];
 	int32_t noise_tile_size;
+	int32_t grayscale;
+
+	float layer_weights[4];
 };
 
 int main(int argc, char **argv)
@@ -58,6 +66,10 @@ int main(int argc, char **argv)
 
 	struct GPUUniforms uniforms = {
 		.noise_tile_size = 4,
+		.noise_offsets_r = { 0, 0 },
+		.noise_offsets_g = { 6, 3 },
+		.noise_offsets_b = { 1, 7 },
+		.layer_weights = { 1.0f, 0.9f, 0.75f, 0.5f },
 	};
 
 	// 1. Create GPU resources

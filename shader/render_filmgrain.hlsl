@@ -5,7 +5,14 @@ Texture2D<float4> in_raw_texture : register(t0, space0);
 Texture2D<float4> noise_texture : register(t1, space0);
 
 struct Uniforms {
+	int2 noise_offsets_r;
+	int2 noise_offsets_g;
+
+	int2 noise_offsets_b;
 	int noise_tile_size;
+	int grayscale;
+
+	float4 layer_weights;
 };
 
 cbuffer UniformsConstantBuffer : register(b0, space2) { Uniforms u : packoffset(c0); }
@@ -38,18 +45,19 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	{
 		float3 rgb = in_raw_texture.Load(int3(id.xy, 0)).rgb;
 
-		uint grain_count = 0;
+		uint3 grain_count = 0;
 
 		for(int y = 0; y < u.noise_tile_size; ++y) {
 			for(int x = 0; x < u.noise_tile_size; ++x) {
-				grain_count += render_channel(rgb.r, (id.xy * u.noise_tile_size + int2(x, y)) % noise_size, float4(1.0, 0.9, 0.75, 0.5));
+				grain_count.r += render_channel(rgb.r, (id.xy * u.noise_tile_size + int2(x, y) + u.noise_offsets_r) % noise_size, u.layer_weights);
+				grain_count.g += render_channel(rgb.g, (id.xy * u.noise_tile_size + int2(x, y) + u.noise_offsets_g) % noise_size, u.layer_weights);
+				grain_count.b += render_channel(rgb.b, (id.xy * u.noise_tile_size + int2(x, y) + u.noise_offsets_b) % noise_size, u.layer_weights);
 			}
 		}
 
-		float reconstructed_value = float(grain_count) / float(u.noise_tile_size * u.noise_tile_size);
+		float3 reconstructed_value = float3(grain_count) / float(u.noise_tile_size * u.noise_tile_size);
+		float3 out_rgb = reconstructed_value;
 
-		float3 out_rgb = reconstructed_value.rrr;
-
-		out_texture[id.xy] = float4(out_rgb, 1.0);
+		out_texture[id.xy] = pow(float4(out_rgb, 1.0), 2.2);
 	}
 }
