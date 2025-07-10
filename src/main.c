@@ -35,6 +35,9 @@ struct GPUUniforms {
 	int32_t grayscale;
 
 	float layer_weights[4];
+
+	float base_color[3];
+	float use_base_color;
 };
 
 int main(int argc, char **argv)
@@ -49,6 +52,8 @@ int main(int argc, char **argv)
 		.noise_offsets_b = { 1, 7 },
 		.layer_weights = { 1.0f, 0.9f, 0.75f, 0.5f },
 		.grayscale = 0,
+		.base_color = { 0.005f, 0.009f, 0.014f },
+		.use_base_color = 0.0f,
 	};
 
 	struct Argument {
@@ -76,7 +81,13 @@ int main(int argc, char **argv)
 		  .description = "Four layers of film grain are applied, each one of them has the input value multiplied by this to simulate occlusion." },
 
 		{ "-grayscale", .type = INT_VALUE, .count = 1, .ptr = &uniforms.grayscale,
-		  .description = "Set this to 1 to treat the input image as grayscale (works on colour images as well). If the input is actually grayscale you should set this to avoid colourful film grain." }
+		  .description = "Set this to 1 to treat the input image as grayscale (works on colour images as well). If the input is actually grayscale you should set this to avoid colourful film grain." },
+
+		{ "-base_color", .type = FLOAT_VALUE, .count = 3, .ptr = &uniforms.base_color,
+		  .description = "Simulating the emulsion base layer color, this sets the black point of the image. It is only applied if -use_base_color is enabled." },
+
+		{ "-use_base_color", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.use_base_color,
+		  .description = "How much to blend in the base color (0.0 to 1.0)." },
 	};
 
 	int args_top = 1;

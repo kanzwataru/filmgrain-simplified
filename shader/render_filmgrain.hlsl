@@ -13,6 +13,9 @@ struct Uniforms {
 	int grayscale;
 
 	float4 layer_weights;
+
+	float3 base_color;
+	float use_base_color;
 };
 
 cbuffer UniformsConstantBuffer : register(b0, space2) { Uniforms u : packoffset(c0); }
@@ -60,12 +63,17 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 		}
 
 		float3 reconstructed_value = float3(grain_count) / float(u.noise_tile_size * u.noise_tile_size); // TODO: Should probably account for layer weight!
-		float3 out_rgb = reconstructed_value;
+		float3 out_rgb = pow(reconstructed_value, 2.2);
 
 		if(u.grayscale) {
 			out_rgb = out_rgb.rrr;
 		}
+		else {
+			// NOTE: The black point manipulation for the base color is applied in gamma display space on purpose.
+			float3 base_color = lerp(float3(0.0, 0.0, 0.0), u.base_color, u.use_base_color);
+			out_rgb = lerp(base_color, float3(1.0, 1.0, 1.0), out_rgb);
+		}
 
-		out_texture[id.xy] = pow(float4(out_rgb, 1.0), 2.2);
+		out_texture[id.xy] = float4(out_rgb, 1.0);
 	}
 }
