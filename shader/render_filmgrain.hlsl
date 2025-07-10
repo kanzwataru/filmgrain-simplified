@@ -45,6 +45,10 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	{
 		float3 rgb = in_raw_texture.Load(int3(id.xy, 0)).rgb;
 
+		if(u.grayscale) {
+			rgb = dot(rgb, float3(0.299, 0.587, 0.114)).rrr;
+		}
+
 		uint3 grain_count = 0;
 
 		for(int y = 0; y < u.noise_tile_size; ++y) {
@@ -55,8 +59,12 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 			}
 		}
 
-		float3 reconstructed_value = float3(grain_count) / float(u.noise_tile_size * u.noise_tile_size);
+		float3 reconstructed_value = float3(grain_count) / float(u.noise_tile_size * u.noise_tile_size); // TODO: Should probably account for layer weight!
 		float3 out_rgb = reconstructed_value;
+
+		if(u.grayscale) {
+			out_rgb = out_rgb.rrr;
+		}
 
 		out_texture[id.xy] = pow(float4(out_rgb, 1.0), 2.2);
 	}

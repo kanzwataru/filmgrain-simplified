@@ -18,6 +18,7 @@
 #define THREADCOUNT 8
 
 #define MAX(a_, b_) ((a_) > (b_) ? (a_) : (b_))
+#define countof(x_) (sizeof(x_) / sizeof((x_)[0]))
 
 static uint32_t calc_threadgroup(uint32_t count)
 {
@@ -41,14 +42,104 @@ int main(int argc, char **argv)
 	SDL_Init(SDL_INIT_VIDEO);
 
 	// 0. Load data
-	if(argc != 3) {
-		fprintf(stderr, "filmgrain-simplified [in-image-path] [out-image-path]\n");
-		fprintf(stderr, "\nNOTE: The input image should be 16-bit for best results.\n");
+	struct GPUUniforms uniforms = {
+		.noise_tile_size = 4,
+		.noise_offsets_r = { 0, 0 },
+		.noise_offsets_g = { 6, 3 },
+		.noise_offsets_b = { 1, 7 },
+		.layer_weights = { 1.0f, 0.9f, 0.75f, 0.5f },
+		.grayscale = 0,
+	};
+
+	struct Argument {
+		const char *flag_name;
+		enum { INT_VALUE, FLOAT_VALUE } type;
+		int count;
+		void *ptr;
+		const char *description;
+	};
+
+	struct Argument arguments[] = {
+		{ "-noise_tile_size", .type = INT_VALUE, .count = 1, .ptr = &uniforms.noise_tile_size,
+		  .description = "How many subpixels of noise to apply. For example 3 would be a 3x3 tile per pixel. The larger the number the finer the grain." },
+
+		{ "-noise_offsets_r", .type = INT_VALUE, .count = 2, .ptr = &uniforms.noise_offsets_r[0],
+		  .description = "How many pixels to shift the noise texture for the Red channel" },
+
+		{ "-noise_offsets_g", .type = INT_VALUE, .count = 2, .ptr = &uniforms.noise_offsets_g[0], 
+		  .description = "How many pixels to shift the noise texture for the Green channel"},
+
+		{ "-noise_offsets_b", .type = INT_VALUE, .count = 2, .ptr = &uniforms.noise_offsets_b[0],
+		  .description = "How many pixels to shift the noise texture for the Blue channel" },
+
+		{ "-layer_weights", .type = FLOAT_VALUE, .count = 4, .ptr = &uniforms.layer_weights,
+		  .description = "Four layers of film grain are applied, each one of them has the input value multiplied by this to simulate occlusion." },
+
+		{ "-grayscale", .type = INT_VALUE, .count = 1, .ptr = &uniforms.grayscale,
+		  .description = "Set this to 1 to treat the input image as grayscale (works on colour images as well). If the input is actually grayscale you should set this to avoid colourful film grain." }
+	};
+
+	int args_top = 1;
+
+	if(argc < 3 || (argc == 2 && 0 == strcmp(argv[1], "--help"))) {
+		fprintf(stderr, "filmgrain-simplified [in-image-path] [out-image-path] <flags>\n\n");
+		
+		fprintf(stderr, "in-image-path: The path to the input image. Can be 16-bit image.\n");
+		fprintf(stderr, "out-image-path: The path to the output image.\n\n");
+
+		for(int i = 0; i < countof(arguments); ++i) {
+			//fprintf(stderr, "%s\n\t%s\n", arguments[i].flag_name, arguments[i].description);
+			fprintf(stderr, "%s ", arguments[i].flag_name);
+			if(arguments[i].type == INT_VALUE) {
+				for(int j = 0; j < arguments[i].count; ++j) {
+					fprintf(stderr, "%d ", ((int *)arguments[i].ptr)[j]);
+				}
+				fprintf(stderr, "\n");
+			}
+			else if(arguments[i].type == FLOAT_VALUE) {
+				for(int j = 0; j < arguments[i].count; ++j) {
+					fprintf(stderr, "%f ", ((float *)arguments[i].ptr)[j]);
+				}
+				fprintf(stderr, "\n");
+			}
+			fprintf(stderr, "\t%s\n\n", arguments[i].description);
+		}
+
 		return 1;
 	}
 
-	const char *in_path = argv[1];
-	const char *out_path = argv[2];
+	const char *in_path = argv[args_top++];
+	const char *out_path = argv[args_top++];
+
+	while(args_top < argc) {
+		bool parsed = false;
+		for(int i = 0; i < countof(arguments); ++i) {
+			if(0 == strcmp(arguments[i].flag_name, argv[args_top])) {
+				if(args_top + arguments[i].count >= argc) {
+					fprintf(stderr, "%s takes %d numbers\n", arguments[i].flag_name, arguments[i].count);
+					return 1;
+				}
+
+				++args_top;
+				for(int j = 0; j < arguments[i].count; ++j) {
+					if(arguments[i].type == INT_VALUE) {
+						((int*)arguments[i].ptr)[j] = atoi(argv[args_top++]);
+					}
+					else if(arguments[i].type == FLOAT_VALUE) {
+						((float*)arguments[i].ptr)[j] = atof(argv[args_top++]);
+					}
+				}
+
+				parsed = true;
+				break;
+			}
+		}
+
+		if(!parsed) {
+			fprintf(stderr, "Unknown argument: %s\n", argv[args_top]);
+			return 1;
+		}
+	}
 
 	int w, h, c;
 	void *in_texture_data = stbi_load_16(in_path, &w, &h, &c, 4);
@@ -63,14 +154,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Couldn't load noise texture\n");
 		return 1;
 	}
-
-	struct GPUUniforms uniforms = {
-		.noise_tile_size = 4,
-		.noise_offsets_r = { 0, 0 },
-		.noise_offsets_g = { 6, 3 },
-		.noise_offsets_b = { 1, 7 },
-		.layer_weights = { 1.0f, 0.9f, 0.75f, 0.5f },
-	};
 
 	// 1. Create GPU resources
 	SDL_GPUDevice *device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, NULL);
