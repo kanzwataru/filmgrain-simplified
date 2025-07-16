@@ -23,6 +23,11 @@ struct Uniforms {
 
 	float3 base_color;
 	float use_base_color;
+
+	float in_texture_gamma;
+	float in_noise_gamma;
+	float out_texture_gamma;
+	float _padding0;
 };
 
 cbuffer UniformsConstantBuffer : register(b0, space2) { Uniforms u : packoffset(c0); }
@@ -34,7 +39,7 @@ cbuffer UniformsConstantBuffer : register(b0, space2) { Uniforms u : packoffset(
 uint render_channel(float value, int2 noise_coord, float4 layer_weights)
 {
 	// Sample the noise texture
-	float4 noise_sample = noise_texture[noise_coord];
+	float4 noise_sample = pow(noise_texture[noise_coord], 1.0 / u.in_noise_gamma);
 
 	// Apply the noise
 	// * Most important thing to note: we "step" the noise by the value, giving us a binary value!
@@ -73,6 +78,8 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 		rgb = dot(rgb, float3(0.299, 0.587, 0.114)).rrr;
 	}
 
+	rgb = pow(rgb, 1.0 / u.in_texture_gamma);
+
 	// 4. Re-render the image using the film grain model
 
 	// * This variable accumulates how many film grains are "hit by light" in this pixel.
@@ -92,19 +99,18 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 	}
 
 	// * Here we average the sub-pixel grain tile, to get a value from 0.0 to 1.0, which will be used as the output luminance of the image.
-	// * Note we apply a (simplified) sRGB display transform here for the output.
-	//   The input image color space wasn't accounted for, and the noise distribution is also not controlled for (which also gives it a curve),
-	//   so this is a bit sloppy and would need improvement for use in a real product.
 	float3 reconstructed_value = float3(grain_count) / float(u.noise_tile_size * u.noise_tile_size); // TODO: Should probably account for layer weight and count!
-	float3 out_rgb = pow(reconstructed_value, 2.2);
+
+	// * A (simplified) sRGB display transform here for the output.
+	float3 out_rgb = pow(reconstructed_value, u.out_texture_gamma);
 
 	// 5. Write out the pixel value
-
-	// * Output only one channel if we're grayscale, otherwise do film base color emulation
 	if(u.grayscale) {
+		// * Output only one channel since we're grayscale
 		out_rgb = out_rgb.rrr;
 	}
 	else {
+		// * Emulate the film base layer color
 		// NOTE: The black point manipulation for the base color is applied in gamma display space on purpose.
 		float3 base_color = lerp(float3(0.0, 0.0, 0.0), u.base_color, u.use_base_color);
 		out_rgb = lerp(base_color, float3(1.0, 1.0, 1.0), out_rgb);

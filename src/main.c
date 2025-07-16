@@ -38,6 +38,11 @@ struct GPUUniforms {
 
 	float base_color[3];
 	float use_base_color;
+
+	float in_texture_gamma;
+	float in_noise_gamma;
+	float out_texture_gamma;
+	float _padding0;
 };
 
 int main(int argc, char **argv)
@@ -52,8 +57,11 @@ int main(int argc, char **argv)
 		.noise_offsets_b = { 1, 7 },
 		.layer_weights = { 1.0f, 0.9f, 0.75f, 0.5f },
 		.grayscale = 0,
-		.base_color = { 0.005f, 0.009f, 0.014f },
+		.base_color = { 0.03f, 0.053f, 0.084f },
 		.use_base_color = 0.0f,
+		.in_texture_gamma = 2.2f,
+		.in_noise_gamma = 2.2f,
+		.out_texture_gamma = 2.2f,
 	};
 
 	struct Argument {
@@ -88,6 +96,15 @@ int main(int argc, char **argv)
 
 		{ "-use_base_color", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.use_base_color,
 		  .description = "How much to blend in the base color (0.0 to 1.0)." },
+
+  		{ "-in_texture_gamma", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.in_texture_gamma,
+		  .description = "The gamma of the input texture. Should be 2.2 for sRGB image, but if you're supplying a linear 16-bit image directly converted from RAW then you should set this to 1.0. Alternatively, setting both this and -in_noise_gamma to 1.0 does the rendering in gamma space, which due to incorrectly applying extra S-curves actually looks more like film." },
+
+  		{ "-in_noise_gamma", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.in_noise_gamma,
+		  .description = "The gamma of the noise texture. This should always be 2.2, unless you're experimenting with doing the rendering in gamma space to get an accidental filmic look, then set this and -in_texture_gamma to 1.0." },
+
+  		{ "-out_texture_gamma", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.out_texture_gamma,
+		  .description = "The gamma of the output texture. This should probably always be left at 1.0." },
 	};
 
 	int args_top = 1;
