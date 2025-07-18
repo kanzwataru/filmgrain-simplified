@@ -73,37 +73,37 @@ int main(int argc, char **argv)
 	};
 
 	struct Argument arguments[] = {
-		{ "-noise_tile_size", .type = INT_VALUE, .count = 1, .ptr = &uniforms.noise_tile_size,
+		{ "--noise_tile_size", .type = INT_VALUE, .count = 1, .ptr = &uniforms.noise_tile_size,
 		  .description = "How many subpixels of noise to apply. For example 3 would be a 3x3 tile per pixel. The larger the number the finer the grain." },
 
-		{ "-noise_offsets_r", .type = INT_VALUE, .count = 2, .ptr = &uniforms.noise_offsets_r[0],
+		{ "--noise_offsets_r", .type = INT_VALUE, .count = 2, .ptr = &uniforms.noise_offsets_r[0],
 		  .description = "How many pixels to shift the noise texture for the Red channel" },
 
-		{ "-noise_offsets_g", .type = INT_VALUE, .count = 2, .ptr = &uniforms.noise_offsets_g[0], 
+		{ "--noise_offsets_g", .type = INT_VALUE, .count = 2, .ptr = &uniforms.noise_offsets_g[0], 
 		  .description = "How many pixels to shift the noise texture for the Green channel"},
 
-		{ "-noise_offsets_b", .type = INT_VALUE, .count = 2, .ptr = &uniforms.noise_offsets_b[0],
+		{ "--noise_offsets_b", .type = INT_VALUE, .count = 2, .ptr = &uniforms.noise_offsets_b[0],
 		  .description = "How many pixels to shift the noise texture for the Blue channel" },
 
-		{ "-layer_weights", .type = FLOAT_VALUE, .count = 4, .ptr = &uniforms.layer_weights,
+		{ "--layer_weights", .type = FLOAT_VALUE, .count = 4, .ptr = &uniforms.layer_weights,
 		  .description = "Four layers of film grain are applied, each one of them has the input value multiplied by this to simulate occlusion." },
 
-		{ "-grayscale", .type = INT_VALUE, .count = 1, .ptr = &uniforms.grayscale,
+		{ "--grayscale", .type = INT_VALUE, .count = 1, .ptr = &uniforms.grayscale,
 		  .description = "Set this to 1 to treat the input image as grayscale (works on colour images as well). If the input is actually grayscale you should set this to avoid colourful film grain." },
 
-		{ "-base_color", .type = FLOAT_VALUE, .count = 3, .ptr = &uniforms.base_color,
-		  .description = "Simulating the emulsion base layer color, this sets the black point of the image. It is only applied if -use_base_color is enabled." },
+		{ "--base_color", .type = FLOAT_VALUE, .count = 3, .ptr = &uniforms.base_color,
+		  .description = "Simulating the emulsion base layer color, this sets the black point of the image. It is only applied if --use_base_color is enabled." },
 
-		{ "-use_base_color", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.use_base_color,
+		{ "--use_base_color", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.use_base_color,
 		  .description = "How much to blend in the base color (0.0 to 1.0)." },
 
-  		{ "-in_texture_gamma", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.in_texture_gamma,
-		  .description = "The gamma of the input texture. Should be 2.2 for sRGB image, but if you're supplying a linear 16-bit image directly converted from RAW then you should set this to 1.0. Alternatively, setting both this and -in_noise_gamma to 1.0 does the rendering in gamma space, which due to incorrectly applying extra S-curves actually looks more like film." },
+  		{ "--in_texture_gamma", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.in_texture_gamma,
+		  .description = "The gamma of the input texture. Should be 2.2 for sRGB image, but if you're supplying a linear 16-bit image directly converted from RAW then you should set this to 1.0. Alternatively, setting both this and --in_noise_gamma to 1.0 does the rendering in gamma space, which due to incorrectly applying extra S-curves actually looks more like film." },
 
-  		{ "-in_noise_gamma", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.in_noise_gamma,
+  		{ "--in_noise_gamma", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.in_noise_gamma,
 		  .description = "The gamma of the noise texture. This should always be 2.2, unless you're experimenting with doing the rendering in gamma space to get an accidental filmic look, then set this and -in_texture_gamma to 1.0." },
 
-  		{ "-out_texture_gamma", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.out_texture_gamma,
+  		{ "--out_texture_gamma", .type = FLOAT_VALUE, .count = 1, .ptr = &uniforms.out_texture_gamma,
 		  .description = "The gamma of the output texture. This should probably always be left at 1.0." },
 	};
 
